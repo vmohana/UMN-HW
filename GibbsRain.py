@@ -70,4 +70,4 @@ for i in range(int(N)):
 
 print('True: ', true_counter)
 print('False', false_counter)
-print('probability: ', (true_counter/int(N)))
+print('probability of Rain = True: ', (true_counter/int(N)))

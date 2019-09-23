@@ -22,7 +22,7 @@ import numpy as np
 N = sys.argv[1]
 
 ne_variables = ['C', 'R'] # The non evidence variables.
-probabilities = {'C':{'R':0.080, '~R':0.020}, 'R':{'C':0.632, '~C':0.180}, '~C':{'R':0.920, '~R':0.980}, '~R':{'C':0.368, '~C':0.820}} # The probabilities of non evidence variables given their Markov blankets. 
+probabilities = {'C':{'R':0.4444, '~R':0.04761}, 'R':{'C':0.8148, '~C':0.2157}, '~C':{'R':0.5555, '~R':0.9524}, '~R':{'C':0.1851, '~C':0.7843}} # The probabilities of non evidence variables given their Markov blankets. 
 initial_state = ['C','S','R','W'] # An array holding the intial array. It also reflects the current state of random variables. 
 false_counter = 0 # The number of times a state in which Rain = false is visited.
 true_counter = 0 # The number of times a state with Rain = true is visited.

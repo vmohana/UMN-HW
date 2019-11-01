@@ -6,31 +6,39 @@ from scipy.stats import multivariate_normal
 
 def EMG(image, k, flag):
 
-    # Turn the image into pixels
     if flag == 0:
-	    image = image[:,:,:3]/255
-	    pixels = np.reshape(image[:,:,:3], (image.shape[0]*image.shape[1], 3))    
-	    colors = KMeans(n_clusters=k).fit(pixels)
-	    clusters = np.hstack((pixels, np.reshape(colors.labels_, (13400,1))))
-	    initial_means = colors.cluster_centers_
+        image = image[:,:,:3]/255
+        pixels = np.reshape(image[:,:,:3], (image.shape[0]*image.shape[1], 3))
+        colours = KMeans(n_clusters = k, max_iter = 3).fit(pixels)
+        clusters = np.hstack((pixels, np.reshape(colours.labels_, (13400, 1))))
+        means = colours.cluster_centers_
+        
+        # Calculate the initial variances
+        variances = [np.cov(clusters[clusters[:,-1]==i][:,:-1], rowvar = False) for i in range(k)]
+        pi = [len(clusters[clusters[:,-1]==i])/len(pixels) for i in range(k)]
 
-	    # Store the initial variances and pi values indexed by gaussian.
-	    initial_variances, initial_pi = [], []
-	    for i in range(k):
-	        initial_variances.append(np.cov(clusters[clusters[:,-1]==i][:,:-1], rowvar = False))
-	        initial_pi.append(len(clusters[clusters[:,-1]==i])/len(pixels))
-	    
-	    for pixel in pixels:
-	    	for gaussian in range(k):
-	    		likelihood = multivariate_normal.pdf(pixel, initial_means[gaussian], initial_variances[gaussian])
-		
-		'''
-        for pixel in pixels:
-			likelihood = [multivariate_normal.pdf(pixel, initial_means[gaussian], initial_variances[gaussian]) for gaussian in range(k)]
-	    '''
-	    return likelihood
+        
+        expectation = None
+        
+        for iterations in range(150):
 
-    else:
-    	pass
+            for pixel in range(len(pixels)):
+
+                # Expectation step
+                likelihood = [multivariate_normal.pdf(pixels[pixel], means[gaussian], variances[gaussian]) for gaussian in range(k)]
+                expectation = np.multiply(pi, likelihood)/np.sum(np.multiply(pi, likelihood))
+                clusters[:,-1][pixel] = np.argmax(expectation)
+
+                # Maximization step
+                pi = [len(clusters[clusters[:,-1]==i])/len(pixels) for i in range(k)]
+                means = [np.mean(clusters[clusters[:,-1]==i][:,:3], axis = 0) for i in range(k)]
+                variances = [np.cov(clusters[clusters[:,-1] == i][:,:-1], rowvar = False) for i in range(k)]
+
+            print(means)
+        print('Final means')
+
+        return means
+
+
 img = io.imread('stadium.bmp')
 print(EMG(img, 3, 0))

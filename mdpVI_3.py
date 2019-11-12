@@ -1,73 +1,39 @@
-# Transition working well
+# Value iteration where terminal states have utilities and the agent can visit terminal states. 
+# Terminal states have 0 starting utility.
 
 import sys
 
 reward = float(sys.argv[1])
 
-# Function to get the new state given the current state and action taken
+def get_reward(state, reward):
+    if state == (4,2):
+        return -1
+    elif state == (4,3):
+        return 1
+    else:
+        return reward
 def get_new_state(state, action):
-    new_state = None
+    
     if action == 'u':
-        if state[1] + 1 > 3 or(state[1]+1 == 2 and state[0] == 2) or (state[1]+1 == 3 and state[0] == 4) or (state[1]+1 == 2 and state[0] == 4):
+        if state[1] + 1 > 3 or(state[1] == 1 and state[0] == 2):
             return state
         else:
             return (state[0], state[1]+1)
     elif action == 'd':
-        if state[1] - 1 < 1 or(state[1]-1 == 2 and state[0]==2):
+        if state[1] - 1 < 1 or(state[1] == 3 and state[0]==2):
             return state
         else:
             return (state[0], state[1]-1)
     elif action == 'l':
-        if state[0] - 1 < 1 or (state[0] - 1 == 2 and state[1]==2):
+        if state[0] - 1 < 1 or (state[0] == 3 and state[1]==2):
             return state
         else:
             return (state[0]-1, state[1])
     else:
-        if state[0] + 1 > 4 or (state[0] + 1 == 2 and state[1]==2) or (state[0] + 1 == 4 and state[1]==3) or (state[0] + 1 == 4 and state[1]==2):
+        if state[0] + 1 > 4 or (state[0] == 1 and state[1]==2):
             return state
         else:
             return (state[0]+1, state[1])
-    return new_state
-
-def get_expected_utility(state, utilities):
-    expected_utilites = []
-    for action in ['u','d','l','r']:
-        if action == 'u':
-            other_actions = ['l','r']
-            expected_utility = 0.8*utilities[get_new_state(state, action)]\
-                + 0.1*utilities[get_new_state(state, other_actions[0])]\
-                    + 0.1*utilities[get_new_state(state, other_actions[1])]
-            expected_utilites.append(expected_utility) 
-        elif action == 'd':
-            other_actions = ['l','r']
-            expected_utility = 0.8*utilities[get_new_state(state, action)]\
-                +0.1*utilities[get_new_state(state, other_actions[0])]\
-                    + 0.1*utilities[get_new_state(state, other_actions[1])]
-            expected_utilites.append(expected_utility)
-        elif action == 'l':
-            other_actions = ['d', 'u']
-            expected_utility = 0.8*utilities[get_new_state(state, action)]\
-                +0.1*utilities[get_new_state(state, other_actions[0])]\
-                    +0.1*utilities[get_new_state(state, other_actions[1])]
-            expected_utilites.append(expected_utility)
-        else:
-            other_actions = ['d','u']
-            expected_utility = 0.8*utilities[get_new_state(state, action)]\
-                +0.1*utilities[get_new_state(state, other_actions[0])]\
-                    +0.1*utilities[get_new_state(state, other_actions[1])]
-            expected_utilites.append(expected_utility)
-    return max(expected_utilites)
-
-def get_maximum_utility(state, utilities, reward, gamma):
-    action_utilities = []
-    for action in ['u','d','l','r']:
-        state_possibilites = get_state_probability(state, action)
-        #print(state_possibilites)
-        action_utility = 0
-        for possible_state in list(state_possibilites.keys()):
-            action_utility += state_possibilites[possible_state]*utilities[possible_state]     
-        action_utilities.append(action_utility)     
-    return max(action_utilities)
 
 def insert_probability(state, possibility_dict, probability):
     if state in list(possibility_dict.keys()):
@@ -76,7 +42,7 @@ def insert_probability(state, possibility_dict, probability):
         possibility_dict[state] = probability
     return possibility_dict    
 
-def get_state_probability(state, action):
+def get_state_probabilities(state, action):
     possible_states = {}
     if action == 'u':
         possible_states = insert_probability(get_new_state(state, action), possible_states, 0.8)
@@ -97,23 +63,46 @@ def get_state_probability(state, action):
         possible_states = insert_probability(get_new_state(state, 'u'), possible_states, 0.1)
         possible_states = insert_probability(get_new_state(state, 'd'), possible_states, 0.1)
         
-    return possible_states
+    return possible_states, list(possible_states.keys())
+'''
+    
+def get_state_probabilities(state, action):
+    state_probability = None
+    if action == 'u':
+        state_probability = {get_new_state(state, action):0.8, get_new_state(state, 'l'):0.1, get_new_state(state, 'r'):0.1}
+    elif action == 'd':
+        state_probability = {get_new_state(state, action):0.8, get_new_state(state, 'l'):0.1, get_new_state(state, 'r'):0.1}
+    elif action == 'l':
+        state_probability = {get_new_state(state, action):0.8, get_new_state(state, 'u'):0.1, get_new_state(state, 'd'):0.1}
+    else:
+        state_probability = {get_new_state(state, action):0.8, get_new_state(state, 'u'):0.1, get_new_state(state, 'd'):0.1}
+    return state_probability, list(state_probability.keys())
+'''
+
+def maximum_utility(utilities, state):
+    action_utilities = []
+    for action in ['u','d','l','r']:
+        probabilities, possibilities = get_state_probabilities(state, action)
+        #print(probs, poss)
+        #print(action, probabilities)
+        action_util = 0
+        for p in possibilities:
+            #print(p)
+            action_util += probabilities[p]*utilities[p]
+        action_utilities.append(action_util)
+        #print(action_util)
+    return max(action_utilities)
 
 def value_iteration(reward):
-    utilities = {(1,1):0, (1,2):0, (1,3):0, (2,1):0, (2,3):0, (3,1):0, (3,2):0, (3,3):0, (4,1):0, (4,2):-1, (4,3): 1}
-    updated_utilities = {(1,1):0, (1,2):0, (1,3):0, (2,1):0, (2,3):0, (3,1):0, (3,2):0, (3,3):0, (4,1):0, (4,2):-1, (4,3): 1}
-    terminal_states = [(4,2), (4,3)]
-    non_terminal_states = [state for state in list(utilities.keys()) if state not in terminal_states]
-    epsilon = 0.1
-    gamma = 0.99
+    utilities = {(1,1):0, (1,2):0, (1,3):0, (2,1):0, (2,3):0, (3,1):0, (3,2):0, (3,3):0, (4,1):0, (4,2):-1, (4,3):1}
+    updated_utilities = utilities
+
     while True:
         utilities = updated_utilities
         delta = 0
-        for state in non_terminal_states:
-            updated_utilities[state] = reward + gamma*get_maximum_utility(state, utilities, reward, gamma)
+        gamma = 0.9
+        print(utilities)
+        for state in list(utilities.keys()):
+            updated_utilities[state] = get_reward(state, reward) + gamma*(maximum_utility(utilities, state))
 
-            delta = max(delta, abs(updated_utilities[state] - utilities[state]))
-        if delta < epsilon*(1-gamma)/gamma:
-            return utilities
-    
-print(value_iteration(reward))
+value_iteration(reward)

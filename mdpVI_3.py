@@ -1,6 +1,4 @@
-# Value iteration where terminal states have utilities and the agent can visit terminal states. 
-# Terminal states have 0 starting utility.
-
+# This script follows the pseudocode described in Rich Sutton's reinforcement learning book
 import sys
 
 reward = float(sys.argv[1])
@@ -12,6 +10,8 @@ def get_reward(state, reward):
         return 1
     else:
         return reward
+
+
 def get_new_state(state, action):
     
     if action == 'u':
@@ -64,45 +64,60 @@ def get_state_probabilities(state, action):
         possible_states = insert_probability(get_new_state(state, 'd'), possible_states, 0.1)
         
     return possible_states, list(possible_states.keys())
-'''
-    
-def get_state_probabilities(state, action):
-    state_probability = None
-    if action == 'u':
-        state_probability = {get_new_state(state, action):0.8, get_new_state(state, 'l'):0.1, get_new_state(state, 'r'):0.1}
-    elif action == 'd':
-        state_probability = {get_new_state(state, action):0.8, get_new_state(state, 'l'):0.1, get_new_state(state, 'r'):0.1}
-    elif action == 'l':
-        state_probability = {get_new_state(state, action):0.8, get_new_state(state, 'u'):0.1, get_new_state(state, 'd'):0.1}
-    else:
-        state_probability = {get_new_state(state, action):0.8, get_new_state(state, 'u'):0.1, get_new_state(state, 'd'):0.1}
-    return state_probability, list(state_probability.keys())
-'''
 
-def maximum_utility(utilities, state):
+def maximum_utility(utilities, state, gamma, reward):
     action_utilities = []
     for action in ['u','d','l','r']:
         probabilities, possibilities = get_state_probabilities(state, action)
-        #print(probs, poss)
-        #print(action, probabilities)
         action_util = 0
+        #print(probabilities)
         for p in possibilities:
-            #print(p)
-            action_util += probabilities[p]*utilities[p]
+            
+            action_util += probabilities[p]*(get_reward(p,reward) + gamma*utilities[p])
+            #print(action, p, action_util)
         action_utilities.append(action_util)
         #print(action_util)
     return max(action_utilities)
 
+#print(maximum_utility(utilities, (3,3), 1, reward))
+
+
+def calculate_policy(state, utilities, gamma, reward):
+    action_utilities = {}
+    for action in ['u','d','r','l']:
+        probabilities, possibilities = get_state_probabilities(state, action)
+        action_utility = 0
+        for possible_state in possibilities:
+            #probabilities[possible_state]
+            action_utility += probabilities[possible_state]*(get_reward(possible_state, reward) + gamma*utilities[possible_state])
+        action_utilities[action] = action_utility
+    sorted_utilities = sorted(action_utilities.items(), key = lambda kv: kv[1])
+    return sorted_utilities[-1][0]
+
+
 def value_iteration(reward):
-    utilities = {(1,1):0, (1,2):0, (1,3):0, (2,1):0, (2,3):0, (3,1):0, (3,2):0, (3,3):0, (4,1):0, (4,2):-1, (4,3):1}
-    updated_utilities = utilities
+    utilities = {(1,1):0, (1,2):0, (1,3):0, (2,1):0, (2,3):0, (3,1):0, (3,2):0, (3,3):0, (4,1):0, (4,2):0, (4,3):0}
+    terminal_states = [(4,2),(4,3)]
+    gamma = 0.95
+    non_terminal_states = [item for item in list(utilities.keys()) if item not in terminal_states]
+    print(utilities)
+    epsilon = 0.00001
 
     while True:
-        utilities = updated_utilities
         delta = 0
-        gamma = 0.9
         print(utilities)
-        for state in list(utilities.keys()):
-            updated_utilities[state] = get_reward(state, reward) + gamma*(maximum_utility(utilities, state))
+        for state in list(non_terminal_states):
+            value = utilities[state]
+            utilities[state] = maximum_utility(utilities, state, gamma, reward)
+            delta = max(abs(value - utilities[state]), delta)
+        if delta < epsilon*(1-gamma)/gamma:
+            break
 
-value_iteration(reward)
+    print('POLICIES FOR GAMMA={} | EPSILON={}'.format(gamma, epsilon))
+    for state in non_terminal_states:
+        print('policy for {}: {}'.format(state, calculate_policy(state, utilities, gamma, reward)))
+    return utilities
+
+utilities = value_iteration(reward)
+
+print(calculate_policy((3,3), utilities, 0.99, reward))

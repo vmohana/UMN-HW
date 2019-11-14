@@ -1,6 +1,6 @@
 import pandas as pd
 import math
-from sklearn import tree
+#from sklearn import tree
 
 # Preprocess the dataset
 dataset = pd.read_csv('dataset.csv', header=None)
@@ -57,3 +57,42 @@ def decision_tree(dataset):
         else:
             tree[split_attribute][attribute_value] = decision_tree(split_data[attribute_value])
     return tree
+
+
+def classify(tree, training_example):
+    while True:
+        attribute = list(tree.keys())
+        if len(attribute) == 1:
+            tree = tree[attribute[0]]
+            tree = tree[training_example[attribute[0]]]
+            if tree == 'T' or tree == 'F':
+                return tree
+            else:
+                classify(tree, training_example)
+    return tree
+    
+tree = decision_tree(dataset)
+
+# Training_error
+training_error = 0 
+for i in range(len(dataset)):
+    pred = classify(tree, dataset.iloc[i, 0:10])
+    if pred != dataset.iloc[i, -1]:
+        training_error += 1
+print('Training error:', training_error/len(dataset))
+
+# LOOCV
+def LOOCV(dataset):
+    error = 0
+    for i in range(len(dataset)):
+        test_data = dataset.iloc[i, 0:10]
+        Y = dataset.iloc[i, -1]
+        
+        training_data = dataset.drop(dataset.index[[i]])
+        loocv_tree = decision_tree(training_data)
+        pred = classify(loocv_tree, test_data)
+        if pred != Y:
+            error+=1
+    print('LOOCV error: ', error/len(dataset))
+
+LOOCV(dataset)

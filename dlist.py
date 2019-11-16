@@ -31,3 +31,28 @@ def decision_list(examples):
                 if len(examples) == 0:
                     return d_list
     return d_list
+
+
+'''
+Recursive
+def decision_list(dataset):
+    if len(dataset) == 0:
+        return ('T', 'F')
+    else:
+        split_attribute = None
+        split_value = None
+        for attribute in dataset.columns[0:10]:
+            sub_data = split_data(dataset, attribute)
+            for value in list(sub_data.keys()):
+                if pure(sub_data[value]):
+                    split_attribute = attribute
+                    split_value = value
+                    break
+                break
+        if dataset[dataset[split_attribute] == split_value]['Wait'].iloc[0] == 'T':
+            O = 'T'
+        else:
+            O = 'F'
+        dataset = dataset.drop(dataset[dataset[split_attribute] == split_value].index)
+        return (split_attribute, split_value, O), decision_list(dataset)
+'''

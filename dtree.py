@@ -72,8 +72,8 @@ def classify(tree, training_example):
     return tree
     
 tree = decision_tree(dataset)
-
 # Training_error
+print('Decision tree error')
 training_error = 0 
 for i in range(len(dataset)):
     pred = classify(tree, dataset.iloc[i, 0:10])
